@@ -1,0 +1,34 @@
+{
+  "name": "emprestai-tutoriais",
+  "version": "1.0.0",
+  "description": "Emprestaí: API REST, mensageria (RabbitMQ), GraphQL e API Gateway aplicados ao marketplace de empréstimo e aluguel de objetos",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "rest": "node rest/index.js",
+    "graphql": "node graphql/index.js",
+    "gateway": "node gateway/gateway.js",
+    "notificacoes": "node mensageria/consumidor-notificacoes.js",
+    "auditoria": "node mensageria/consumidor-auditoria.js",
+    "avaliacoes": "node mensageria/consumidor-avaliacoes.js",
+    "consumidores": "node mensageria/todos.js",
+    "dlq": "node mensageria/inspecionar-dlq.js",
+    "cliente": "node testes/cliente.js",
+    "teste-graphql": "node testes/teste-graphql.js",
+    "teste-gateway": "node testes/teste-gateway.js",
+    "teste-evento": "node testes/teste-mensageria.js evento",
+    "teste-falha": "node testes/teste-mensageria.js falha",
+    "teste-duplicado": "node testes/teste-mensageria.js duplicado",
+    "test": "node --test \"testes/unitarios/*.test.js\""
+  },
+  "dependencies": {
+    "@apollo/server": "^5.0.0",
+    "amqplib": "^0.10.9",
+    "dataloader": "^2.2.3",
+    "express": "^5.2.0",
+    "graphql": "^16.11.0"
+  }
+}

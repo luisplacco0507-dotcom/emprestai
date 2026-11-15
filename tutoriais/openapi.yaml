@@ -1,0 +1,419 @@
+openapi: 3.1.0
+info:
+  title: Emprestaí — API REST
+  version: 1.0.0
+  description: |
+    API do núcleo do Emprestaí (marketplace de empréstimo e aluguel temporário de objetos entre pessoas):
+    usuários, anúncios de objetos, aluguéis e avaliações.
+
+    Todas as chamadas externas passam pelo API Gateway (`http://localhost:3000/api`), que exige o cabeçalho
+    `X-API-Key`. A API REST em si ouve apenas em `127.0.0.1:3001`. Erros seguem a RFC 9457 (Problem Details),
+    com `Content-Type: application/problem+json`.
+servers:
+  - url: http://localhost:3000/api
+    description: Pelo API Gateway (único ponto de entrada)
+  - url: http://127.0.0.1:3001
+    description: Direto na API REST (apenas desenvolvimento, na própria máquina)
+security:
+  - chaveDeApi: []
+tags:
+  - name: Objetos
+    description: Anúncios de objetos (CRUD completo)
+  - name: Aluguéis
+    description: Solicitação e acompanhamento dos aluguéis
+  - name: Usuários
+  - name: Avaliações
+
+paths:
+  /objetos:
+    get:
+      tags: [Objetos]
+      summary: Lista anúncios com filtro, ordenação e paginação
+      parameters:
+        - { name: categoria, in: query, schema: { $ref: '#/components/schemas/Categoria' } }
+        - { name: estado, in: query, schema: { $ref: '#/components/schemas/EstadoConservacao' } }
+        - { name: cidade, in: query, schema: { type: string }, description: Igualdade, sem diferenciar maiúsculas }
+        - { name: busca, in: query, schema: { type: string }, description: Trecho do título ou da descrição }
+        - { name: disponivel, in: query, schema: { type: boolean } }
+        - { name: proprietarioId, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: precoMax, in: query, schema: { type: number, minimum: 0 }, description: Valor máximo da diária }
+        - { name: ids, in: query, schema: { type: string, example: '1,2,3' }, description: Lista de ids (usada pelo DataLoader do GraphQL) }
+        - $ref: '#/components/parameters/ordem'
+        - { name: ordenar, in: query, schema: { type: string, enum: [id, titulo, valorDiaria, maxDias, criadoEm], default: id } }
+        - $ref: '#/components/parameters/pagina'
+        - $ref: '#/components/parameters/limite'
+      responses:
+        '200':
+          description: Página de anúncios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados: { type: array, items: { $ref: '#/components/schemas/Objeto' } }
+                  paginacao: { $ref: '#/components/schemas/Paginacao' }
+        '400': { $ref: '#/components/responses/ParametroInvalido' }
+    post:
+      tags: [Objetos]
+      summary: Anuncia um objeto
+      description: Publica o evento `objeto.anunciado` no RabbitMQ (exchange `emprestai.eventos`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NovoObjeto' }
+            example: { proprietarioId: 3, titulo: Caixa de som Bluetooth 40W, categoria: ELETRONICOS, estado: SEMINOVO, valorDiaria: 20, maxDias: 4, cidade: Contagem }
+      responses:
+        '201':
+          description: Criado
+          headers:
+            Location: { schema: { type: string, example: /objetos/7 } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Objeto' }
+        '400': { $ref: '#/components/responses/JsonInvalido' }
+        '422': { $ref: '#/components/responses/DadosInvalidos' }
+
+  /objetos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      tags: [Objetos]
+      summary: Lê um anúncio
+      responses:
+        '200': { description: O anúncio, content: { application/json: { schema: { $ref: '#/components/schemas/Objeto' } } } }
+        '400': { $ref: '#/components/responses/IdInvalido' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+    put:
+      tags: [Objetos]
+      summary: Substitui o anúncio inteiro
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/DadosObjeto' } } }
+      responses:
+        '200': { description: Anúncio como ficou, content: { application/json: { schema: { $ref: '#/components/schemas/Objeto' } } } }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/DadosInvalidos' }
+    patch:
+      tags: [Objetos]
+      summary: Altera só os campos enviados
+      description: Pausar o anúncio (`disponivel=false`) com aluguel ativo devolve 409 (`objeto-com-aluguel-ativo`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DadosObjetoParcial' }
+            example: { valorDiaria: 18 }
+      responses:
+        '200': { description: Anúncio como ficou, content: { application/json: { schema: { $ref: '#/components/schemas/Objeto' } } } }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/DadosInvalidos' }
+    delete:
+      tags: [Objetos]
+      summary: Remove o anúncio
+      responses:
+        '204': { description: Removido }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /alugueis:
+    get:
+      tags: [Aluguéis]
+      summary: Lista aluguéis
+      parameters:
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/StatusAluguel' } }
+        - { name: objetoId, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: locatarioId, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: proprietarioId, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: usuarioId, in: query, schema: { type: integer, minimum: 1 }, description: Aluguéis em que o usuário participa (dono ou locatário) }
+        - { name: ordenar, in: query, schema: { type: string, enum: [id, dataInicio, dataFim, valorTotal, criadoEm], default: id } }
+        - $ref: '#/components/parameters/ordem'
+        - $ref: '#/components/parameters/pagina'
+        - $ref: '#/components/parameters/limite'
+      responses:
+        '200':
+          description: Página de aluguéis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados: { type: array, items: { $ref: '#/components/schemas/Aluguel' } }
+                  paginacao: { $ref: '#/components/schemas/Paginacao' }
+        '400': { $ref: '#/components/responses/ParametroInvalido' }
+    post:
+      tags: [Aluguéis]
+      summary: Solicita o aluguel de um objeto
+      description: |
+        Regras de negócio: retirada no passado (422 `data-no-passado`); período maior que o `maxDias` do anúncio
+        (422 `periodo-acima-do-limite`); alugar o próprio objeto (422 `aluguel-do-proprio-objeto`);
+        anúncio pausado (422 `objeto-indisponivel`); período já reservado (409 `periodo-ocupado`).
+        A resposta 201 sai sem esperar os consumidores do evento `aluguel.solicitado`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NovaSolicitacao' }
+            example: { objetoId: 1, locatarioId: 2, dataInicio: '2026-11-20', dataFim: '2026-11-22' }
+      responses:
+        '201':
+          description: Solicitação criada (status SOLICITADO)
+          headers:
+            Location: { schema: { type: string, example: /alugueis/5 } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/Aluguel' } } }
+        '400': { $ref: '#/components/responses/JsonInvalido' }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/DadosInvalidos' }
+
+  /alugueis/{id}:
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      tags: [Aluguéis]
+      summary: Lê um aluguel, com o histórico de status
+      responses:
+        '200': { description: O aluguel, content: { application/json: { schema: { $ref: '#/components/schemas/Aluguel' } } } }
+        '400': { $ref: '#/components/responses/IdInvalido' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+    patch:
+      tags: [Aluguéis]
+      summary: Muda o status do aluguel
+      description: |
+        Transições: SOLICITADO→APROVADO/RECUSADO (anunciante) ou CANCELADO (locatário);
+        APROVADO→RETIRADO (anunciante) ou CANCELADO (qualquer das partes); RETIRADO→DEVOLVIDO (anunciante).
+        Transição fora da tabela: 409 `transicao-invalida`. Pessoa sem o papel exigido: 403 `acao-nao-permitida`.
+        Publica `aluguel.<status>` (ex.: `aluguel.aprovado`, `aluguel.devolvido`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, usuarioId]
+              properties:
+                status: { $ref: '#/components/schemas/StatusAluguel' }
+                usuarioId: { type: integer, minimum: 1, description: Quem executa a ação }
+            example: { status: APROVADO, usuarioId: 1 }
+      responses:
+        '200': { description: Aluguel com o novo status, content: { application/json: { schema: { $ref: '#/components/schemas/Aluguel' } } } }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/DadosInvalidos' }
+
+  /usuarios:
+    get:
+      tags: [Usuários]
+      summary: Lista usuários
+      parameters:
+        - { name: ids, in: query, schema: { type: string, example: '1,2' } }
+        - { name: cidade, in: query, schema: { type: string } }
+        - { name: busca, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/pagina'
+        - $ref: '#/components/parameters/limite'
+      responses:
+        '200': { description: Página de usuários }
+        '400': { $ref: '#/components/responses/ParametroInvalido' }
+    post:
+      tags: [Usuários]
+      summary: Cadastra um usuário
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/NovoUsuario' } } }
+      responses:
+        '201': { description: Criado, headers: { Location: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/Usuario' } } } }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/DadosInvalidos' }
+  /usuarios/{id}:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      tags: [Usuários]
+      summary: Lê um usuário
+      responses:
+        '200': { description: O usuário, content: { application/json: { schema: { $ref: '#/components/schemas/Usuario' } } } }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+
+  /avaliacoes:
+    get:
+      tags: [Avaliações]
+      summary: Lista avaliações
+      parameters:
+        - { name: aluguelId, in: query, schema: { type: integer } }
+        - { name: avaliadoId, in: query, schema: { type: integer } }
+        - { name: avaliadorId, in: query, schema: { type: integer } }
+        - { name: usuarioIds, in: query, schema: { type: string, example: '1,2' }, description: Avaliações recebidas por estes usuários }
+      responses:
+        '200': { description: Página de avaliações }
+    post:
+      tags: [Avaliações]
+      summary: Avalia a outra parte depois da devolução
+      description: Aluguel não devolvido (422 `aluguel-nao-concluido`); quem não participou (403); segunda avaliação da mesma pessoa (409 `avaliacao-duplicada`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [aluguelId, avaliadorId, nota]
+              properties:
+                aluguelId: { type: integer }
+                avaliadorId: { type: integer }
+                nota: { type: integer, minimum: 1, maximum: 5 }
+                comentario: { type: string, maxLength: 300 }
+      responses:
+        '201': { description: Avaliação registrada }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/DadosInvalidos' }
+
+components:
+  securitySchemes:
+    chaveDeApi:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Exigida pelo gateway. Chaves fictícias de teste no README.
+
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    pagina: { name: pagina, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    limite: { name: limite, in: query, description: Teto de 50 por página, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+    ordem: { name: ordem, in: query, schema: { type: string, enum: [asc, desc], default: asc } }
+
+  schemas:
+    Categoria: { type: string, enum: [FERRAMENTAS, ELETRONICOS, ESPORTE, CAMPING, CASA, FESTA, LIVROS, OUTROS] }
+    EstadoConservacao: { type: string, enum: [NOVO, SEMINOVO, USADO] }
+    StatusAluguel: { type: string, enum: [SOLICITADO, APROVADO, RECUSADO, CANCELADO, RETIRADO, DEVOLVIDO] }
+    Paginacao:
+      type: object
+      properties: { pagina: { type: integer }, limite: { type: integer }, total: { type: integer }, totalPaginas: { type: integer } }
+    DadosObjeto:
+      type: object
+      required: [titulo, categoria, estado, valorDiaria, maxDias, cidade]
+      properties:
+        titulo: { type: string, minLength: 3, maxLength: 80 }
+        descricao: { type: string, maxLength: 500 }
+        categoria: { $ref: '#/components/schemas/Categoria' }
+        estado: { $ref: '#/components/schemas/EstadoConservacao' }
+        valorDiaria: { type: number, minimum: 0, maximum: 10000, description: 0 = empréstimo gratuito }
+        maxDias: { type: integer, minimum: 1, maximum: 30, description: Período máximo que o dono aceita }
+        cidade: { type: string }
+        disponivel: { type: boolean, default: true }
+    DadosObjetoParcial:
+      type: object
+      properties:
+        titulo: { type: string }
+        descricao: { type: string }
+        categoria: { $ref: '#/components/schemas/Categoria' }
+        estado: { $ref: '#/components/schemas/EstadoConservacao' }
+        valorDiaria: { type: number }
+        maxDias: { type: integer }
+        cidade: { type: string }
+        disponivel: { type: boolean }
+    NovoObjeto:
+      allOf:
+        - $ref: '#/components/schemas/DadosObjeto'
+        - type: object
+          required: [proprietarioId]
+          properties: { proprietarioId: { type: integer, minimum: 1 } }
+    Objeto:
+      allOf:
+        - $ref: '#/components/schemas/NovoObjeto'
+        - type: object
+          properties: { id: { type: integer }, criadoEm: { type: string, format: date-time } }
+    NovaSolicitacao:
+      type: object
+      required: [objetoId, locatarioId, dataInicio, dataFim]
+      properties:
+        objetoId: { type: integer, minimum: 1 }
+        locatarioId: { type: integer, minimum: 1 }
+        dataInicio: { type: string, format: date, description: Dia da retirada }
+        dataFim: { type: string, format: date, description: Dia da devolução }
+    Aluguel:
+      type: object
+      properties:
+        id: { type: integer }
+        objetoId: { type: integer }
+        proprietarioId: { type: integer }
+        locatarioId: { type: integer }
+        dataInicio: { type: string, format: date }
+        dataFim: { type: string, format: date }
+        dias: { type: integer }
+        valorTotal: { type: number }
+        status: { $ref: '#/components/schemas/StatusAluguel' }
+        historico:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { $ref: '#/components/schemas/StatusAluguel' }
+              porUsuarioId: { type: integer }
+              em: { type: string, format: date-time }
+    NovoUsuario:
+      type: object
+      required: [nome, email, telefone, cidade]
+      properties:
+        nome: { type: string }
+        email: { type: string, format: email }
+        telefone: { type: string, example: '+55 (31) 98888-0001' }
+        cidade: { type: string }
+    Usuario:
+      allOf:
+        - $ref: '#/components/schemas/NovoUsuario'
+        - type: object
+          properties: { id: { type: integer } }
+    Problema:
+      type: object
+      description: Problem Details (RFC 9457)
+      properties:
+        type: { type: string, example: 'https://emprestai.example.com/problemas/periodo-ocupado' }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string, description: O mesmo X-Request-Id gerado pelo gateway }
+        erros:
+          type: array
+          items: { type: object, properties: { campo: { type: string }, mensagem: { type: string } } }
+
+  responses:
+    ParametroInvalido:
+      description: Parâmetro de consulta inválido (`parametro-invalido`)
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } }
+    IdInvalido:
+      description: Id que não é inteiro positivo (`identificador-invalido`)
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } }
+    JsonInvalido:
+      description: Corpo que não é JSON válido (`about:blank`)
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } }
+    DadosInvalidos:
+      description: Conteúdo inválido ou regra de negócio violada
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+          example:
+            type: https://emprestai.example.com/problemas/data-no-passado
+            title: Data de retirada no passado
+            status: 422
+            detail: A retirada (2026-11-13) não pode ser anterior a hoje (2026-11-15).
+            instance: /alugueis
+    Proibido:
+      description: Quem pediu não tem o papel exigido (`acao-nao-permitida`)
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } }
+    NaoEncontrado:
+      description: Registro inexistente
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } }
+    Conflito:
+      description: Conflito com o estado atual (período ocupado, transição inválida, aluguel ativo, duplicidade)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+          example:
+            type: https://emprestai.example.com/problemas/periodo-ocupado
+            title: Período já reservado
+            status: 409
+            detail: O objeto já tem o aluguel 2 (APROVADO) entre 2026-11-20 e 2026-11-23.
+            instance: /alugueis
+            aluguelConflitante: 2

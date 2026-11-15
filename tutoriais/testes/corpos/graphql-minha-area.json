@@ -1,0 +1,1 @@
+{ "query": "query MinhaArea($id: ID!) { usuario(id: $id) { nome reputacao { media totalAvaliacoes } alugueisComoLocatario { id status dataInicio objeto { titulo proprietario { nome } } } objetos { titulo alugueis(status: SOLICITADO) { id dataInicio locatario { nome } } } } }", "variables": { "id": "1" } }
