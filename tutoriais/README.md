@@ -208,7 +208,7 @@ Ferramenta usada: Claude (Anthropic), como assistente de programação. Finalida
 
 ## 9. Repositório e vídeo de reserva
 
-- Repositório Git: <https://github.com/luisplacco0507-dotcom/emprestai> (privado; dar acesso ao professor). Tags: `etapa-1-rest`, `etapa-2-mensageria`, `etapa-3-graphql`, `etapa-4-gateway`, `entrega-final`.
+- Repositório Git: <https://github.com/luisplacco0507-dotcom/emprestai>. Tags: `etapa-1-rest`, `etapa-2-mensageria`, `etapa-3-graphql`, `etapa-4-gateway`, `entrega-final`.
 - Vídeo de reserva (até 9 minutos): _(link)_
 
 ## 10. Estrutura
