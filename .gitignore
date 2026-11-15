@@ -1,0 +1,5 @@
+node_modules/
+.env
+*.log
+# estado local dos consumidores (idempotência e auditoria gerados na demonstração)
+tutoriais/mensageria/dados/
