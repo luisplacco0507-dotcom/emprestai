@@ -1,0 +1,14 @@
+# Sobe o RabbitMQ 4 com o painel de gerenciamento: docker compose up -d
+# (o Docker Desktop precisa estar aberto). Painel: http://localhost:15672 — usuário guest, senha guest.
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: emprestai-rabbitmq
+    ports:
+      - "5672:5672"   # protocolo AMQP: os programas se conectam aqui
+      - "15672:15672" # painel web de gerenciamento
+    volumes:
+      - rabbitmq-dados:/var/lib/rabbitmq # filas durable e mensagens persistent sobrevivem a "docker compose restart"
+
+volumes:
+  rabbitmq-dados:
