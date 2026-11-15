@@ -188,21 +188,21 @@ A resposta continua 200, com `"parcial": true` e `"indisponivel": ["reputação 
 
 ## 7. Divisão de responsabilidades
 
-> **A confirmar pelo grupo:** preencham com quem realmente foi o responsável principal de cada parte. Todos devem saber explicar o conjunto.
+Todos participaram de todas as partes e sabem explicar o conjunto; a tabela indica o responsável principal.
 
 | Parte | Responsável principal | Apoio |
 |---|---|---|
-| 1. API REST (`rest/`, `openapi.yaml`, `testes/cliente.js`) | _(nome)_ | |
-| 2. Mensageria (`mensageria/`, `compose.yaml`) | _(nome)_ | |
-| 3. GraphQL (`graphql/`) | _(nome)_ | |
-| 4. API Gateway (`gateway/`, `testes/teste-gateway.js`) | _(nome)_ | |
-| 5. Integração, relatório, slides e documentação do semestre | _(nome)_ | |
+| 1. API REST (`rest/`, `openapi.yaml`, `testes/cliente.js`, testes automatizados) | Luis Felipe | Isabella Mozzer |
+| 2. Mensageria (`mensageria/`, `compose.yaml`, `testes/teste-mensageria.js`) | Isabella Mozzer | Luis Felipe |
+| 3. GraphQL (`graphql/`, `testes/teste-graphql.js`) | Luis Felipe | João Gabriel |
+| 4. API Gateway (`gateway/`, `testes/teste-gateway.js`) | Isabella Mozzer | Mariana Melendez |
+| 5. Integração e decisões (diagrama, relatório, tabela de decisões e riscos) | João Gabriel | Livia Ayumi |
+| Documentação do semestre e índice (`documentacao/`, `00-indice.pdf`) | Livia Ayumi | Mariana Melendez |
+| Slides, roteiro e vídeo de reserva (`apresentacao.pdf`) | Mariana Melendez | João Gabriel |
 
 ## 8. Uso de ferramentas de IA
 
-> **Obrigatório pela seção 8 do enunciado.** Ajustem o texto para refletir o uso real do grupo.
-
-Ferramenta usada: Claude (Anthropic), como assistente de programação. Finalidade: gerar um rascunho do código das quatro partes a partir dos tutoriais da disciplina e da documentação das oficinas, sugerir os scripts de demonstração e redigir o primeiro rascunho deste README e do relatório. O grupo revisou, executou e testou o código, e ajustou as regras de negócio ao tema.
+Ferramenta usada: Claude (Anthropic), como assistente de programação. Finalidade: gerar um rascunho do código das quatro partes a partir dos tutoriais da disciplina e da documentação das oficinas, sugerir os scripts de demonstração e redigir o primeiro rascunho deste README, do relatório e dos slides. O grupo revisou, executou e testou o código, ajustou as regras de negócio ao tema e responde por todo o conteúdo na arguição.
 
 ## 9. Repositório e vídeo de reserva
 
