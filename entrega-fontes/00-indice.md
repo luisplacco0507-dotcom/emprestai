@@ -32,4 +32,4 @@ Versões: as duas são as versões entregues nas oficinas, sem alteração depoi
 | 10 | Slides da apresentação oral | `apresentacao.pdf` | Mariana Melendez |
 | 11 | Este índice | `00-indice.pdf` | Livia Ayumi |
 
-**Repositório Git:** ver README (tags `etapa-1-rest`, `etapa-2-mensageria`, `etapa-3-graphql`, `etapa-4-gateway`, `entrega-final`).
+**Repositório Git:** https://github.com/luisplacco0507-dotcom/emprestai (tags `etapa-1-rest`, `etapa-2-mensageria`, `etapa-3-graphql`, `etapa-4-gateway`, `entrega-final`).
