@@ -2,8 +2,6 @@
 
 **Disciplina:** Modelagem de Padrões de Projeto · **Grupo:** Isabella Mozzer, João Gabriel, Livia Ayumi, Luis Felipe e Mariana Melendez · **Data:** 16/11/2026
 
-> Versão em Markdown. Para a entrega, exportar como `relatorio-tutoriais.pdf` (4 a 6 páginas) e colar as capturas de tela indicadas em **[Evidência]**.
-
 ## 1. Tema e núcleo implementado
 
 O Emprestaí é um marketplace de economia compartilhada para empréstimo e aluguel temporário de objetos entre pessoas. O usuário anuncia objetos, procura itens, solicita um aluguel, combina retirada e devolução e, no fim, avalia a outra parte. A diferença em relação a um marketplace de venda é o **tempo**: o mesmo objeto é emprestado várias vezes, e o sistema precisa garantir que dois aluguéis não ocupem o mesmo período e que cada etapa (aprovação, retirada, devolução) seja feita por quem tem o direito de fazê-la.
@@ -26,38 +24,9 @@ O núcleo implementado é o **ciclo de vida do aluguel**, com quatro recursos: u
 
 ## 2. Diagrama da arquitetura
 
-```mermaid
-flowchart TB
-    subgraph Atores
-      APP["Aplicativo móvel<br/>app-emprestai · 20/min"]
-      PAINEL["Painel de moderação<br/>painel-moderacao · 120/min"]
-      PARC["Seguradora parceira<br/>parceiro-seguros · 5/min, só GET /api/objetos"]
-    end
-    APP & PAINEL & PARC -- "HTTPS + X-API-Key" --> GW
+![Diagrama da arquitetura do Emprestaí](entrega-fontes/diagrama-arquitetura.svg)
 
-    GW["API Gateway :3000 (única porta pública)<br/>X-Request-Id · autenticação · autorização 403 · limite 429<br/>timeout 504 · falha 502 · disjuntor 503<br/>rota agregada /api/painel/alugueis/:id"]
-
-    subgraph Rede interna - 127.0.0.1
-      REST["API REST :3001<br/>Apresentação → Aplicação → Domínio<br/>Infraestrutura: repositório em memória + outbox"]
-      GQL["Servidor GraphQL :4000<br/>Apollo Server 5 + DataLoader"]
-      MQ[("RabbitMQ<br/>exchange topic emprestai.eventos")]
-      N["Consumidor notificações<br/>aluguel.*"]
-      A["Consumidor auditoria<br/>#"]
-      AV["Consumidor convites de avaliação<br/>aluguel.devolvido"]
-      DLQ[("DLQs<br/>emprestai.*.dlq")]
-    end
-
-    GW -- "/api/objetos, /api/alugueis,<br/>/api/usuarios, /api/avaliacoes" --> REST
-    GW -- "/api/graphql → /" --> GQL
-    GQL -- "HTTP (busca os dados)" --> REST
-    REST -. "publica evento (assíncrono,<br/>outbox + publisher confirms)" .-> MQ
-    MQ -. "fila emprestai.notificacoes" .-> N
-    MQ -. "fila emprestai.auditoria" .-> A
-    MQ -. "fila emprestai.avaliacoes" .-> AV
-    N & A & AV -. "3 tentativas, depois nack" .-> DLQ
-```
-
-Linhas cheias são chamadas síncronas (HTTP, o cliente espera). Linhas tracejadas são assíncronas: a API responde 201 antes de os consumidores agirem. **[Evidência]** captura dos terminais com os 6 processos e da aba *Queues* do painel do RabbitMQ.
+Linhas cheias são chamadas síncronas (HTTP, o cliente espera). Linhas tracejadas são assíncronas: a API responde 201 antes de os consumidores agirem.
 
 ## 3. Relação com a documentação do semestre
 
@@ -91,7 +60,51 @@ Linhas cheias são chamadas síncronas (HTTP, o cliente espera). Linhas tracejad
    `[notificacoes] f3f7ec57-… aluguel.solicitado notificação enviada a Ana Souza …` · `[auditoria] f3f7ec57-… aluguel.solicitado registrado na trilha de auditoria`
 5. Ana aprova (`PATCH /api/alugueis/6` com `{"status":"APROVADO","usuarioId":1}`), e o fluxo se repete com `aluguel.aprovado`. Se o locatário fosse o Diego (DDD 00), a notificação falharia 3 vezes e iria para `emprestai.notificacoes.dlq`, sem afetar a auditoria, que tem a própria fila.
 
-**[Evidência]** respostas 201 e 422 (`npm run cliente`); painel do RabbitMQ com a DLQ (`npm run teste-falha` e `npm run dlq`); consulta GraphQL (`npm run teste-graphql`); 401, 429 e 503 do gateway (`npm run teste-gateway`, `-- falha`); o mesmo `X-Request-Id` nos terminais do gateway, da API e de um consumidor.
+### Evidências (saídas reais dos scripts de `tutoriais/testes/`)
+
+**API REST pelo gateway** (`npm run cliente`):
+
+```
+POST /objetos  -> 201  Location: /api/objetos/7
+POST /alugueis -> 201  Location: /api/alugueis/6
+POST /alugueis -> 409  Período já reservado: O objeto já tem o aluguel 6 (SOLICITADO) entre 2026-11-18 e 2026-11-19.
+POST /alugueis -> 422  Data de retirada no passado: A retirada (2026-11-13) não pode ser anterior a hoje (2026-11-15).
+POST /alugueis -> 422  Período acima do limite do anunciante: ... no máximo 4 dia(s); foram pedidos 11.
+PATCH /alugueis/6 -> 403  Ação não permitida: Só o anunciante pode mudar este aluguel para APROVADO.
+DELETE /objetos/7 -> 409  Objeto com aluguel em andamento ... o aluguel 6 está SOLICITADO.
+```
+
+**O mesmo `X-Request-Id` no gateway e na API, e o evento registrado na outbox:**
+
+```
+[gateway] b00c902b-... POST /api/alugueis -> 201 (7 ms) cliente=painel-moderacao
+[rest]    b00c902b-... evento aluguel.solicitado registrado na outbox
+[rest]    b00c902b-... POST /alugueis -> 201 (2 ms) cliente=painel-moderacao
+```
+
+**GraphQL** (`npm run teste-graphql`): uma consulta no lugar de 11 chamadas REST, e o id seguindo até a API.
+
+```
+[gateway] 59e682f5-... POST /api/graphql -> 200 (110 ms) cliente=app-emprestai
+[graphql] 59e682f5-... operação MinhaArea -> 9 chamada(s) REST (seriam 11 sem DataLoader)
+[rest]    59e682f5-... GET /usuarios/1 -> 200
+[rest]    59e682f5-... GET /alugueis?locatarioId=1&ordenar=dataInicio&limite=50&pagina=1 -> 200
+```
+
+**Gateway** (`npm run teste-gateway`, `-- falha`, `-- recuperacao` e `-- parcial`):
+
+```
+401  GET /api/objetos sem chave
+403  GET /api/alugueis com a chave do parceiro
+504  GET /api/objetos?atraso=5000                  2018 ms
+429  GET /api/objetos #6 (parceiro)                retry-after=60
+502  GET /api/objetos #1, #2, #3 (API REST desligada)
+503  GET /api/objetos #4                    2 ms   retry-after=10   (disjuntor aberto)
+200  GET /api/objetos (API religada, disjuntor fechou)
+200  GET /api/painel/alugueis/2 (GraphQL desligado)   "parcial": true
+```
+
+**Mensageria** (cenas 3 e 4 do README): os logs `[notificacoes]`, `[auditoria]` e `[avaliacoes]` com o mesmo `X-Request-Id` e a fila `emprestai.notificacoes.dlq` no painel do RabbitMQ aparecem ao vivo na apresentação, com `npm run teste-evento`, `npm run teste-falha`, `npm run dlq` e `npm run teste-duplicado`.
 
 ## 6. Riscos e limitações do protótipo
 
@@ -108,11 +121,19 @@ Linhas cheias são chamadas síncronas (HTTP, o cliente espera). Linhas tracejad
 
 ## 7. Divisão do trabalho
 
-_(Preencher com a mesma tabela do README: responsável principal e apoio de cada parte.)_
+| Parte | Responsável principal | Apoio |
+|---|---|---|
+| 1. API REST | Luis Felipe | Isabella Mozzer |
+| 2. Mensageria | Isabella Mozzer | Luis Felipe |
+| 3. GraphQL | Luis Felipe | João Gabriel |
+| 4. API Gateway | Isabella Mozzer | Mariana Melendez |
+| 5. Integração, relatório e decisões | João Gabriel | Livia Ayumi |
+| Documentação do semestre e índice | Livia Ayumi | Mariana Melendez |
+| Slides, roteiro e vídeo de reserva | Mariana Melendez | João Gabriel |
 
 ## 8. Uso de IA
 
-Ferramenta: Claude (Anthropic), usado como assistente de programação para gerar o rascunho do código das quatro partes a partir dos tutoriais da disciplina e dos documentos das oficinas, os scripts de demonstração e o primeiro rascunho deste relatório e do README. O grupo revisou, executou e testou o código, e responde por ele na arguição. _(Ajustar para refletir o uso real.)_
+Ferramenta: Claude (Anthropic), usado como assistente de programação para gerar o rascunho do código das quatro partes a partir dos tutoriais da disciplina e dos documentos das oficinas, os scripts de demonstração e o primeiro rascunho deste relatório, do README e dos slides. O grupo revisou, executou e testou o código, e responde por ele na arguição.
 
 ## 9. Referências
 

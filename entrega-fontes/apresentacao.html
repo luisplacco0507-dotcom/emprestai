@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Emprestaí — apresentação final</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; }
+  section { width: 1280px; height: 720px; padding: 54px 72px 40px; position: relative; page-break-after: always; overflow: hidden; background: #fff; }
+  section::after { content: attr(data-n); position: absolute; right: 36px; bottom: 22px; font-size: 15px; color: #9ca3af; }
+  .bloco { position: absolute; left: 72px; bottom: 22px; font-size: 14px; color: #9ca3af; letter-spacing: .5px; text-transform: uppercase; }
+  h1 { font-size: 46px; margin: 0 0 18px; color: #b91c1c; }
+  h2 { font-size: 36px; margin: 0 0 22px; color: #111827; border-left: 8px solid #dc2626; padding-left: 16px; }
+  p, li { font-size: 23px; line-height: 1.45; }
+  ul { margin: 6px 0; padding-left: 28px; }
+  li { margin: 7px 0; }
+  .sub { color: #6b7280; font-size: 22px; }
+  .capa { background: linear-gradient(135deg, #fff 55%, #fee2e2); display: flex; flex-direction: column; justify-content: center; }
+  .capa h1 { font-size: 78px; margin-bottom: 8px; }
+  .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
+  .cartao { border: 1.5px solid #e5e7eb; border-radius: 14px; padding: 16px 22px; background: #fafafa; }
+  .cartao h3 { margin: 0 0 8px; font-size: 24px; color: #b91c1c; }
+  .cartao p, .cartao li { font-size: 19px; }
+  table { border-collapse: collapse; width: 100%; font-size: 18px; }
+  th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; }
+  code { font-family: Consolas, monospace; background: #f3f4f6; padding: 1px 6px; border-radius: 5px; font-size: .9em; }
+  .linha { display: flex; gap: 18px; align-items: stretch; margin-top: 18px; }
+  .linha .cartao { flex: 1; }
+  .seta { align-self: center; font-size: 36px; color: #dc2626; }
+  .num { font-size: 92px; font-weight: 800; color: #dc2626; line-height: 1; }
+  .diagrama svg { width: 100%; height: 560px; }
+  .pequeno li, .pequeno p { font-size: 19px; }
+  .ok { color: #15803d; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<section class="capa" data-n="1">
+  <h1>Emprestaí</h1>
+  <p class="sub" style="font-size:30px;margin:0 0 30px">Marketplace de empréstimo e aluguel temporário de objetos entre pessoas</p>
+  <p style="font-size:24px">Projeto Fio-condutor e tutoriais em funcionamento<br>REST · RabbitMQ · GraphQL · API Gateway</p>
+  <p style="font-size:22px;margin-top:40px">Isabella Mozzer · João Gabriel · Livia Ayumi · Luis Felipe · Mariana Melendez</p>
+  <p class="sub">Modelagem de Padrões de Projeto · 16/11/2026</p>
+</section>
+
+<section data-n="2">
+  <h2>O problema que o Emprestaí resolve</h2>
+  <div class="duas">
+    <div>
+      <ul>
+        <li>Objetos que passam o ano parados: furadeira, barraca, projetor</li>
+        <li>Quem precisa usa por poucos dias e não quer comprar</li>
+        <li>O Emprestaí conecta as duas pontas: anunciar, buscar, solicitar, retirar, devolver e avaliar</li>
+      </ul>
+    </div>
+    <div class="cartao">
+      <h3>Por que não é "só uma OLX"</h3>
+      <ul>
+        <li>O mesmo objeto é emprestado <b>muitas vezes</b></li>
+        <li>É preciso controlar a <b>disponibilidade no tempo</b></li>
+        <li>Cada etapa (aprovar, retirar, devolver) tem <b>um responsável</b></li>
+        <li>A confiança vem das <b>avaliações</b> depois da devolução</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bloco">Bloco 1 · documentos do semestre</div>
+</section>
+
+<section data-n="3">
+  <h2>Como a documentação evoluiu</h2>
+  <div class="linha">
+    <div class="cartao"><h3>Oficina 1</h3><ul><li>C4 Nível 1: usuário + pagamento, localização e notificações</li><li>C4 Nível 2: app React Native → API Node/Express → PostgreSQL</li><li>ADR-001: PostgreSQL</li></ul></div>
+    <div class="seta">→</div>
+    <div class="cartao"><h3>Oficina 2</h3><ul><li>3 pontos de acoplamento</li><li>4 camadas: Apresentação → Aplicação → Domínio → Infraestrutura</li><li>ADR-002: camadas fechadas + regra verificável</li></ul></div>
+    <div class="seta">→</div>
+    <div class="cartao"><h3>Tutoriais</h3><ul><li>API REST em camadas</li><li>Eventos no RabbitMQ</li><li>GraphQL para as telas</li><li>Gateway como entrada única</li></ul></div>
+  </div>
+  <div class="bloco">Bloco 1 · documentos do semestre</div>
+</section>
+
+<section data-n="4">
+  <h2>Decisões registradas nos documentos</h2>
+  <div class="duas">
+    <div class="cartao">
+      <h3>ADR-001 · PostgreSQL</h3>
+      <p><b>Por quê:</b> usuários, objetos, aluguéis e avaliações são muito relacionados e precisam de consistência durante todo o aluguel.</p>
+      <p><b>Descartados:</b> MongoDB (relações demais), MySQL (atenderia, preferência do grupo).</p>
+      <p><b>Custo:</b> modelagem cuidadosa e migrações.</p>
+    </div>
+    <div class="cartao">
+      <h3>ADR-002 · Camadas fechadas</h3>
+      <p><b>Por quê:</b> separar responsabilidades e isolar o banco e os serviços externos da interface.</p>
+      <p><b>Descartado:</b> camadas abertas (menos código, mais acoplamento).</p>
+      <p><b>Regra verificável:</b> "Apresentação não acessa o banco; Domínio não depende do PostgreSQL".</p>
+    </div>
+  </div>
+  <div class="bloco">Bloco 1 · documentos do semestre</div>
+</section>
+
+<section data-n="5">
+  <h2>Projetado × construído</h2>
+  <table>
+    <tr><th>Documento</th><th>O que mudou na implementação</th><th>Por quê</th></tr>
+    <tr><td>C4 Nível 2</td><td>Novos contêineres: <b>gateway, GraphQL, RabbitMQ e consumidores</b>; o app passa pelo gateway</td><td>Três atores com planos diferentes; telas que juntam muitos dados</td></tr>
+    <tr><td>C4 Nível 1: notificações</td><td>Chamada síncrona virou <b>reação a evento</b></td><td>Se o serviço de avisos cair, o aluguel continua sendo criado</td></tr>
+    <tr><td>ADR-001</td><td>Dados <b>em memória</b> atrás de um repositório</td><td>Protótipo; decisão mantida para produção (transação, outbox, período ocupado)</td></tr>
+    <tr><td>ADR-002</td><td>Regra virou <b>teste automatizado</b> (<code>npm test</code>)</td><td>"Verificável" de verdade: falha se uma camada importar o que não deve</td></tr>
+    <tr><td>Pagamento e localização</td><td>Fora do núcleo</td><td>Foco no ciclo de vida do aluguel</td></tr>
+  </table>
+  <div class="bloco">Bloco 1 · documentos do semestre</div>
+</section>
+
+<section data-n="6" class="diagrama" style="padding-top:34px">
+  <h2 style="margin-bottom:8px">Arquitetura em funcionamento</h2>
+  <!--DIAGRAMA-->
+  <div class="bloco">Bloco 2 · demonstração</div>
+</section>
+
+<section data-n="7">
+  <h2>Núcleo: o ciclo de vida do aluguel</h2>
+  <p style="font-size:24px;margin-bottom:14px"><code>SOLICITADO</code> → <code>APROVADO</code> → <code>RETIRADO</code> → <code>DEVOLVIDO</code> &nbsp;(ou <code>RECUSADO</code> / <code>CANCELADO</code>)</p>
+  <table>
+    <tr><th>Regra de negócio</th><th>Resposta</th></tr>
+    <tr><td>Retirada em data passada</td><td>422 <code>data-no-passado</code></td></tr>
+    <tr><td>Mais dias do que o dono aceita (<code>maxDias</code>)</td><td>422 <code>periodo-acima-do-limite</code></td></tr>
+    <tr><td>Alugar o próprio objeto · anúncio pausado</td><td>422</td></tr>
+    <tr><td>Objeto já reservado no período</td><td>409 <code>periodo-ocupado</code></td></tr>
+    <tr><td>Pular etapa (devolver sem retirar)</td><td>409 <code>transicao-invalida</code></td></tr>
+    <tr><td>Locatário tentando aprovar</td><td>403 <code>acao-nao-permitida</code></td></tr>
+    <tr><td>Remover anúncio com aluguel em andamento</td><td>409 <code>objeto-com-aluguel-ativo</code></td></tr>
+  </table>
+  <div class="bloco">Bloco 2 · demonstração</div>
+</section>
+
+<section data-n="8" class="pequeno">
+  <h2>Roteiro da demonstração</h2>
+  <table>
+    <tr><th>Cena</th><th>Comando</th><th>O que mostrar</th></tr>
+    <tr><td>1. Ambiente</td><td><code>netstat -ano | findstr LISTENING</code></td><td>3000 pública; 3001 e 4000 só em 127.0.0.1</td></tr>
+    <tr><td>2. REST</td><td><code>npm run cliente</code></td><td>201 + Location; 422 e 409 em Problem Details</td></tr>
+    <tr><td>3. Evento</td><td><code>npm run teste-evento</code></td><td>201 na hora; notificações e auditoria reagem</td></tr>
+    <tr><td>4. Falha e duplicidade</td><td><code>npm run teste-falha</code> · <code>npm run dlq</code> · <code>npm run teste-duplicado</code></td><td>3 tentativas → DLQ; 2ª cópia ignorada</td></tr>
+    <tr><td>5. GraphQL</td><td><code>npm run teste-graphql</code></td><td>"Minha área": 1 chamada no lugar de 11</td></tr>
+    <tr><td>6. Gateway</td><td><code>npm run teste-gateway</code> · <code>-- falha</code> · <code>-- recuperacao</code></td><td>401, 403, 504, 429; 502 → 503; volta ao 200</td></tr>
+    <tr><td>7. Agregada</td><td><code>npm run teste-gateway -- parcial</code></td><td>GraphQL desligado: 200 com <code>"parcial": true</code></td></tr>
+    <tr><td>8. Fechamento</td><td>logs dos terminais</td><td>mesmo X-Request-Id no gateway, na API e no consumidor</td></tr>
+  </table>
+  <div class="bloco">Bloco 2 · demonstração</div>
+</section>
+
+<section data-n="9">
+  <h2>Mensageria: o aluguel avisa quem precisa saber</h2>
+  <div class="duas">
+    <div>
+      <ul>
+        <li>Exchange <code>topic</code> <code>emprestai.eventos</code></li>
+        <li>Chaves: <code>aluguel.solicitado</code>, <code>aluguel.aprovado</code>, <code>aluguel.devolvido</code>, <code>objeto.anunciado</code>…</li>
+        <li><b>Outbox</b>: o evento é gravado junto com o aluguel; a API responde 201 sem esperar o broker</li>
+        <li>Filas durable, mensagens persistent, ack manual e prefetch</li>
+      </ul>
+    </div>
+    <div class="cartao">
+      <h3>Consumidores</h3>
+      <ul>
+        <li><b>Notificações</b> · <code>aluguel.*</code></li>
+        <li><b>Auditoria</b> · <code>#</code> (tudo)</li>
+        <li><b>Convites de avaliação</b> · <code>aluguel.devolvido</code></li>
+      </ul>
+      <h3 style="margin-top:14px">Falhas</h3>
+      <ul>
+        <li>3 tentativas com espera crescente → DLQ</li>
+        <li>Idempotência pelo <code>messageId</code></li>
+        <li>Diego (DDD 00) → aviso vai para a DLQ</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bloco">Bloco 2 · demonstração</div>
+</section>
+
+<section data-n="10">
+  <h2>GraphQL: a tela "Minha área" em uma consulta</h2>
+  <div class="duas">
+    <div>
+      <ul>
+        <li>Dados da pessoa e reputação</li>
+        <li>Aluguéis que ela pegou, com o objeto e o dono</li>
+        <li>Pedidos recebidos nos objetos dela, com a reputação de quem pediu</li>
+        <li>Os resolvers <b>chamam a API REST</b>: nenhuma cópia dos dados, nenhuma regra repetida</li>
+        <li><b>DataLoader</b> por requisição contra o N+1</li>
+      </ul>
+    </div>
+    <div style="display:flex;gap:30px;justify-content:center;align-items:center;text-align:center">
+      <div><div class="num">11</div><p>chamadas REST<br>sem GraphQL</p></div>
+      <div class="seta">→</div>
+      <div><div class="num">1</div><p>consulta<br>GraphQL</p></div>
+    </div>
+  </div>
+  <div class="bloco">Bloco 2 · demonstração</div>
+</section>
+
+<section data-n="11">
+  <h2>API Gateway: entrada única e proteções</h2>
+  <div class="duas">
+    <table>
+      <tr><th>Cliente</th><th>Plano</th></tr>
+      <tr><td>app-emprestai</td><td>20/min</td></tr>
+      <tr><td>painel-moderacao</td><td>120/min</td></tr>
+      <tr><td>parceiro-seguros</td><td>5/min, só <code>GET /api/objetos</code></td></tr>
+    </table>
+    <table>
+      <tr><th>Situação</th><th>Resposta</th></tr>
+      <tr><td>Sem chave ou chave errada</td><td>401</td></tr>
+      <tr><td>Rota fora do plano</td><td>403</td></tr>
+      <tr><td>Passou do limite</td><td>429 + Retry-After</td></tr>
+      <tr><td>Serviço lento (2 s)</td><td>504</td></tr>
+      <tr><td>Serviço fora do ar</td><td>502</td></tr>
+      <tr><td>3 falhas seguidas</td><td>503 (disjuntor)</td></tr>
+    </table>
+  </div>
+  <p style="margin-top:22px"><b>Rota agregada</b> <code>/api/painel/alugueis/:id</code>: aluguel + objeto (REST) + reputação das partes (GraphQL). Sem o GraphQL, responde com <code>"parcial": true</code>.</p>
+  <div class="bloco">Bloco 2 · demonstração</div>
+</section>
+
+<section data-n="12">
+  <h2>Duas decisões justificadas</h2>
+  <div class="duas">
+    <div class="cartao">
+      <h3>Notificar por evento, e não por chamada</h3>
+      <p><b>Ganho:</b> o serviço de avisos pode cair sem impedir aluguéis; um novo consumidor entra sem mudar a API.</p>
+      <p><b>Custo:</b> consistência eventual, DLQ para monitorar e consumidores idempotentes.</p>
+    </div>
+    <div class="cartao">
+      <h3>GraphQL sobre a API REST</h3>
+      <p><b>Ganho:</b> uma consulta por tela no app; as regras continuam num lugar só.</p>
+      <p><b>Custo:</b> mais um serviço, cache HTTP difícil e risco de consultas abusivas.</p>
+    </div>
+  </div>
+  <h3 style="font-size:24px;margin:24px 0 6px;color:#b91c1c">Riscos do protótipo → produção</h3>
+  <ul class="pequeno">
+    <li>Dados, outbox e limites em memória → PostgreSQL (ADR-001) e Redis</li>
+    <li>Gateway como ponto único de falha → réplicas atrás de um balanceador</li>
+    <li>Identidade confiada no <code>X-Cliente-Id</code> e no <code>usuarioId</code> → JWT/OpenID Connect e mTLS</li>
+  </ul>
+  <div class="bloco">Bloco 2 · demonstração</div>
+</section>
+
+<section data-n="13" class="capa">
+  <h1 style="font-size:56px">Um aluguel, um X-Request-Id</h1>
+  <p class="sub" style="margin:0 0 8px">Formato dos logs nos terminais (cena 8)</p>
+  <p style="font-family:Consolas,monospace;font-size:19px;line-height:1.7;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:18px 24px">
+    [gateway] b00c902b… POST /api/alugueis -&gt; 201 cliente=app-emprestai<br>
+    [rest]&nbsp;&nbsp;&nbsp; b00c902b… evento aluguel.solicitado registrado na outbox<br>
+    [outbox]&nbsp; b00c902b… publicado aluguel.solicitado<br>
+    [notificacoes] b00c902b… aluguel.solicitado notificação enviada a Ana Souza<br>
+    [auditoria]&nbsp;&nbsp;&nbsp; b00c902b… aluguel.solicitado registrado na trilha de auditoria
+  </p>
+  <p style="font-size:34px;margin-top:30px;color:#b91c1c;font-weight:700">Obrigado! Perguntas?</p>
+</section>
+
+</body>
+</html>

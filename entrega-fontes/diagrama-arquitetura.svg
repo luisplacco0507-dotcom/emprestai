@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640" font-family="Segoe UI, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#444"/>
+    </marker>
+    <marker id="setaAz" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/>
+    </marker>
+  </defs>
+  <style>
+    .caixa { fill: #fff; stroke: #888; stroke-width: 1.2; rx: 8; }
+    .gw { fill: #e8f0fe; stroke: #2563eb; stroke-width: 2; }
+    .mq { fill: #fff7ed; stroke: #c2410c; stroke-width: 1.4; }
+    .titulo { font-weight: 700; font-size: 14px; fill: #111; }
+    .sub { fill: #555; font-size: 11.5px; }
+    .rot { fill: #333; font-size: 11.5px; }
+    .rotA { fill: #c2410c; font-size: 11.5px; }
+    .sinc { stroke: #444; stroke-width: 1.5; fill: none; marker-end: url(#seta); }
+    .assinc { stroke: #c2410c; stroke-width: 1.5; fill: none; stroke-dasharray: 6 4; marker-end: url(#setaAz); }
+  </style>
+
+  <!-- Atores -->
+  <rect class="caixa" x="40" y="15" width="240" height="58"/>
+  <text class="titulo" x="160" y="38" text-anchor="middle">Aplicativo móvel</text>
+  <text class="sub" x="160" y="58" text-anchor="middle">app-emprestai · 20 req/min</text>
+  <rect class="caixa" x="330" y="15" width="240" height="58"/>
+  <text class="titulo" x="450" y="38" text-anchor="middle">Painel de moderação</text>
+  <text class="sub" x="450" y="58" text-anchor="middle">painel-moderacao · 120 req/min</text>
+  <rect class="caixa" x="620" y="15" width="240" height="58"/>
+  <text class="titulo" x="740" y="38" text-anchor="middle">Seguradora parceira</text>
+  <text class="sub" x="740" y="58" text-anchor="middle">parceiro-seguros · 5/min · só GET objetos</text>
+
+  <path class="sinc" d="M160,73 L160,108"/>
+  <path class="sinc" d="M450,73 L450,108"/>
+  <path class="sinc" d="M740,73 L740,108"/>
+  <text class="rot" x="470" y="96">HTTPS + X-API-Key</text>
+
+  <!-- Gateway -->
+  <rect class="caixa gw" x="40" y="110" width="820" height="78"/>
+  <text class="titulo" x="450" y="134" text-anchor="middle">API Gateway · :3000 (única porta pública)</text>
+  <text class="sub" x="450" y="155" text-anchor="middle">X-Request-Id · chave de API (401) · autorização por rota (403) · limite por plano (429)</text>
+  <text class="sub" x="450" y="174" text-anchor="middle">timeout (504) · falha (502) · disjuntor (503) · rota agregada /api/painel/alugueis/:id</text>
+
+  <!-- Rede interna -->
+  <rect x="25" y="215" width="850" height="410" rx="12" fill="none" stroke="#999" stroke-dasharray="5 5"/>
+  <text class="sub" x="860" y="615" text-anchor="end">Rede interna · serviços ouvindo só em 127.0.0.1</text>
+
+  <!-- REST -->
+  <rect class="caixa" x="55" y="250" width="330" height="100"/>
+  <text class="titulo" x="220" y="274" text-anchor="middle">API REST · :3001</text>
+  <text class="sub" x="220" y="294" text-anchor="middle">Apresentação → Aplicação → Domínio (ADR-002)</text>
+  <text class="sub" x="220" y="312" text-anchor="middle">Infraestrutura: repositório em memória + outbox</text>
+  <text class="sub" x="220" y="330" text-anchor="middle">usuários · objetos · aluguéis · avaliações</text>
+
+  <!-- GraphQL -->
+  <rect class="caixa" x="545" y="250" width="300" height="100"/>
+  <text class="titulo" x="695" y="274" text-anchor="middle">Servidor GraphQL · :4000</text>
+  <text class="sub" x="695" y="294" text-anchor="middle">Apollo Server 5 + DataLoader</text>
+  <text class="sub" x="695" y="312" text-anchor="middle">tela "Minha área" em 1 consulta</text>
+  <text class="sub" x="695" y="330" text-anchor="middle">sem cópia própria dos dados</text>
+
+  <path class="sinc" d="M220,188 L220,248"/>
+  <text class="rot" x="228" y="238">/api/objetos, /api/alugueis, /api/usuarios…</text>
+  <path class="sinc" d="M695,188 L695,248"/>
+  <text class="rot" x="703" y="238">/api/graphql → /</text>
+  <path class="sinc" d="M545,300 L387,300"/>
+  <text class="rot" x="466" y="292" text-anchor="middle">HTTP: busca os dados</text>
+
+  <!-- RabbitMQ -->
+  <rect class="caixa mq" x="55" y="410" width="330" height="70"/>
+  <text class="titulo" x="220" y="436" text-anchor="middle">RabbitMQ</text>
+  <text class="sub" x="220" y="456" text-anchor="middle">exchange topic emprestai.eventos</text>
+  <path class="assinc" d="M220,350 L220,408"/>
+  <text class="rotA" x="228" y="378">publica aluguel.*, objeto.*, avaliacao.*</text>
+  <text class="rotA" x="228" y="394">(outbox + publisher confirms; 201 sem esperar)</text>
+
+  <!-- Consumidores -->
+  <rect class="caixa" x="500" y="380" width="345" height="48"/>
+  <text class="titulo" x="672" y="400" text-anchor="middle">Notificações</text>
+  <text class="sub" x="672" y="418" text-anchor="middle">fila emprestai.notificacoes · aluguel.*</text>
+  <rect class="caixa" x="500" y="440" width="345" height="48"/>
+  <text class="titulo" x="672" y="460" text-anchor="middle">Auditoria</text>
+  <text class="sub" x="672" y="478" text-anchor="middle">fila emprestai.auditoria · # (todos)</text>
+  <rect class="caixa" x="500" y="500" width="345" height="48"/>
+  <text class="titulo" x="672" y="520" text-anchor="middle">Convites de avaliação</text>
+  <text class="sub" x="672" y="538" text-anchor="middle">fila emprestai.avaliacoes · aluguel.devolvido</text>
+
+  <path class="assinc" d="M385,430 L498,404"/>
+  <path class="assinc" d="M385,445 L498,464"/>
+  <path class="assinc" d="M385,460 L498,524"/>
+
+  <!-- DLQ -->
+  <rect class="caixa mq" x="55" y="540" width="330" height="58"/>
+  <text class="titulo" x="220" y="563" text-anchor="middle">DLQs · emprestai.*.dlq</text>
+  <text class="sub" x="220" y="583" text-anchor="middle">o que falhou 3 vezes (ou é malformado)</text>
+  <path class="assinc" d="M500,540 L387,566"/>
+  <text class="rotA" x="440" y="575" text-anchor="middle">nack</text>
+
+  <!-- Legenda -->
+  <path class="sinc" d="M40,632 L80,632"/><text class="rot" x="86" y="636">síncrono (o cliente espera)</text>
+  <path class="assinc" d="M260,632 L300,632"/><text class="rotA" x="306" y="636">assíncrono (evento)</text>
+</svg>
