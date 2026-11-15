@@ -26,6 +26,8 @@ Todos os comandos rodam **dentro da pasta `tutoriais/`**. No PowerShell, use `cu
 npm install
 ```
 
+Com o npm 11 ou superior pode aparecer o aviso `install-scripts` sobre o `@apollo/protobufjs` (dependência do Apollo Server). Pode ignorar: o projeto funciona sem esse script.
+
 **Passo 2. Subir o RabbitMQ**
 
 ```bash
